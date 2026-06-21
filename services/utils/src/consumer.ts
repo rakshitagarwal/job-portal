@@ -1,14 +1,28 @@
+import fs from "fs";
+import path from "path";
 import { Kafka } from "kafkajs";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
 dotenv.config();
 
+const kafkaCaPath =
+  process.env.KAFKA_CA_PATH ??
+  path.join(process.cwd(), "src", "certs", "ca.pem");
+
 export const startSendMailConsumer = async () => {
   try {
     const kafka = new Kafka({
       clientId: "mail-service",
-      brokers: [process.env.Kafka_Broker || "localhost:9092"],
+      brokers: [`${process.env.KAFKA_HOST}:${process.env.KAFKA_PORT}`],
+      ssl: {
+        ca: [fs.readFileSync(kafkaCaPath, "utf8")],
+      },
+      sasl: {
+        mechanism: "plain",
+        username: process.env.KAFKA_USERNAME!,
+        password: process.env.KAFKA_PASSWORD!,
+      },
     });
 
     const consumer = kafka.consumer({ groupId: "mail-service-group" });

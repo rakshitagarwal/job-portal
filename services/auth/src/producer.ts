@@ -1,6 +1,12 @@
+import fs from "fs";
+import path from "path";
 import { Kafka, Producer, Admin } from "kafkajs";
 import dotenv from "dotenv";
 dotenv.config();
+
+const kafkaCaPath =
+  process.env.KAFKA_CA_PATH ??
+  path.join(process.cwd(), "src", "certs", "ca.pem");
 
 let producer: Producer;
 let admin: Admin;
@@ -9,7 +15,15 @@ export const connectKafka = async () => {
   try {
     const kafka = new Kafka({
       clientId: "auth-service",
-      brokers: [process.env.Kafka_Broker || "localhost:9092"],
+      brokers: [`${process.env.KAFKA_HOST}:${process.env.KAFKA_PORT}`],
+      ssl: {
+        ca: [fs.readFileSync(kafkaCaPath, "utf8")],
+      },
+      sasl: {
+        mechanism: "plain",
+        username: process.env.KAFKA_USERNAME!,
+        password: process.env.KAFKA_PASSWORD!,
+      },
     });
 
     admin = kafka.admin();
