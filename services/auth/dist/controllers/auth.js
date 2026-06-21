@@ -109,8 +109,12 @@ export const forgotPassword = TryCatch(async (req, res, next) => {
     });
 });
 export const resetPassword = TryCatch(async (req, res, next) => {
-    const { token } = req.params;
+    const rawToken = req.params.token;
+    const token = Array.isArray(rawToken) ? rawToken[0] : rawToken;
     const { password } = req.body;
+    if (!token) {
+        throw new ErrorHandler(400, "Invalid token");
+    }
     let decoded;
     try {
         decoded = jwt.verify(token, process.env.JWT_SEC);
